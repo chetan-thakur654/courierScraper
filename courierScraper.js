@@ -108,7 +108,7 @@ const courierScrapers = {
  "tci-freight-courier-tracking": {
     scrapeData: async (trackingId, page) => {
       // Construct the URL for tracking information
-      const url = `https://www.tcil.com/CnsTrack/TCI_CNS_Trac.aspx`;
+      const url = `https://tcifreight.in/track-consignment.html`;
 
       //   try {
       // Navigate to the tracking page and wait for it to load
