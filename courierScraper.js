@@ -105,7 +105,7 @@ const courierScrapers = {
 
   //   url: (trackingId) => `https://transitpl.com/track`,
   // },
-"tci-freight-courier-tracking": {
+ "tci-freight-courier-tracking": {
     scrapeData: async (trackingId, page) => {
       // Construct the URL for tracking information
       const url = `https://www.tcil.com/CnsTrack/TCI_CNS_Trac.aspx`;
@@ -113,7 +113,13 @@ const courierScrapers = {
       //   try {
       // Navigate to the tracking page and wait for it to load
       await page.goto(url, { timeout: 60000, waitUntil: "load" });
-      await page.waitForTimeout(2000);
+
+       // Wait for a specific selector to appear in the page
+       await page.waitForSelector("#txtCnsNo", {
+        timeout: 12000,
+        waitUntil: "load",
+      });
+
 
       //Add tracking Id to input box
       await page.type("#txtCnsNo", trackingId);
