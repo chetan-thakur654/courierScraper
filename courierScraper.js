@@ -105,78 +105,91 @@ const courierScrapers = {
 
   //   url: (trackingId) => `https://transitpl.com/track`,
   // },
-  "overseas-courier-tracking": {
+"tci-freight-courier-tracking": {
     scrapeData: async (trackingId, page) => {
       // Construct the URL for tracking information
-      const url = `http://www.overseaslogistics.in/tracking.aspx`;
+      const url = `https://www.tcil.com/CnsTrack/TCI_CNS_Trac.aspx`;
 
+      //   try {
       // Navigate to the tracking page and wait for it to load
-      await page.goto(url, {
+      await page.goto(url, { timeout: 60000, waitUntil: "load" });
+      await page.waitForTimeout(2000);
+
+      //Add tracking Id to input box
+      await page.type("#txtCnsNo", trackingId);
+      await page.waitForTimeout(2000);
+
+      //Fetch captcha selector
+      const selector =
+        "#divData > table:nth-child(1) > tbody > tr:nth-child(3) > td:nth-child(1) > span";
+
+      // Get the value from the element
+      const finalValue = await page.evaluate((selector) => {
+        const element = document.querySelector(selector);
+        const value = element.textContent.split("=")[0].trim();
+        return eval(value);
+      }, selector);
+
+      //Paste the captcha value in the input box
+      await page.type("#txtCaptcha", `${finalValue}`);
+      await page.waitForTimeout(2000);
+
+      //   click on the track buttton
+      await page.click("#btnSubmit");
+      await page.waitForTimeout(1000);
+
+      // Wait for a specific selector to appear in the page
+      await page.waitForSelector("#divData > table:nth-child(6)", {
         timeout: 60000,
         waitUntil: "load",
       });
-
-      await page.waitForSelector(`#ContentPlaceHolder1_text`, {
-        timeout: 12000,
-        waitUntil: "load",
-      });
-
-      await page.type("#ContentPlaceHolder1_text", trackingId);
       await page.waitForTimeout(2000);
 
-      await page.click("#ContentPlaceHolder1_Button1");
-
-      await page.waitForSelector(
-        `#ContentPlaceHolder1_DataList1_grdstate_0 > tbody > tr`,
-        {
-          timeout: 12000,
-          waitUntil: "load",
-        }
-      );
-
       // Extract tracking information using Puppeteer's evaluate function
-      const trackingInfo = await page.evaluate(async () => {
+      const trackingInfo = await page.evaluate(() => {
         // Extract delivery status
-        const deliveryStatus = await document
-          .querySelector("#ContentPlaceHolder1_DataList1_Label7_0")
-          .innerText.trim();
+        const deliveryStatus = document.querySelector(
+          "#pt1\\:pgl5 > div:nth-child(2) > span"
+        ).innerText
+          ? "Delivered"
+          : "In Transit";
 
-        let to = await document
-          .querySelector("#ContentPlaceHolder1_DataList1_Label16_0")
-          .innerText.trim();
+        let from = document
+          .querySelector("#tdbkg")
+          .innerText.trim()
+          .split("-->")[0];
 
+        let to = document
+          .querySelector("#tdbkg")
+          .innerText.trim()
+          .split("-->")[1];
         // Extract checkpoints information
         const checkpoints = Array.from(
           document.querySelectorAll(
-            "#ContentPlaceHolder1_DataList1_grdstate_0 > tbody > tr"
+            "#divData > table:nth-child(6) > tbody > tr > td > table > tbody > tr"
           )
         )
           .slice(1)
-          .map((checkpoint) => {
-            return {
-              date: checkpoint
-                .querySelector("td:nth-child(1)")
-                .innerText.trim(),
-              time: checkpoint
-                .querySelector("td:nth-child(2)")
-                .innerText.trim(),
-              activity: checkpoint
-                .querySelector("td:nth-child(4)")
-                .innerText.trim(),
-              courierName: "OverSeas Logistics",
-              location: checkpoint
-                .querySelector("td:nth-child(3)")
-                .innerText.trim(),
-            };
-          });
+          .map((checkpoint) => ({
+            date: checkpoint.querySelector("td:nth-child(1)").innerText,
+            time: "",
+            activity: checkpoint.querySelector("td:nth-child(3)").innerText,
+            courierName: "TCI Frieght",
+            location: checkpoint.querySelector("td:nth-child(2)").innerText,
+          }));
 
-        return { deliveryStatus, to, checkpoints };
+        return { deliveryStatus, from, to, checkpoints };
       });
 
       return trackingInfo;
+      //   //   } catch (err) {
+      //   //     return { error: err.message };
+      //   //   }
     },
 
-    url: (trackingId) => `http://www.overseaslogistics.in/tracking.aspx`,
+    url: (trackingId) => {
+      return `https://www.tcil.com/CnsTrack/TCI_CNS_Trac.aspx`;
+    },
   },
 };
 
