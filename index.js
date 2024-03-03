@@ -2593,8 +2593,8 @@ const urls = [
 
 (async () => {
   const browser = await puppeteer.launch({
-    // headless: "new",
-    headless: false,
+    headless: "new",
+    // headless: false,
     args: ["--no-sandbox", "--disable-setuid-sandbox"],
     protocolTimeout: 300000,
   });
